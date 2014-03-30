@@ -30,6 +30,7 @@ void showHexa(const memory_manager& m) {
     }
     std::cout << "\n";
 }
+
 memory_manager initmem(unsigned int max_size) {
     // Initialise les structures de données du gestionnaire.
 
@@ -41,31 +42,93 @@ memory_manager initmem(unsigned int max_size) {
         };
 }
 
-void* alloumem(memory_manager& m, unsigned int size, int fill = 0) {
+struct first_fit {
+    template<class InputIterator>
+    InputIterator operator()(InputIterator first, InputIterator last, unsigned int size) {
+        return std::find_if(
+            first,
+            last,
+            [size](node n) { return n.m_is_free && n.m_size >= size; });
+    }
+};
+
+struct best_fit {
+    template<class ForwardIterator>
+    ForwardIterator operator()(ForwardIterator first, ForwardIterator last, unsigned int size) {
+        ForwardIterator min = last;
+
+        while (first != last) {
+            if (first->m_is_free && first->m_size >= size) {
+                if (min == last || first->m_size < min->m_size) {
+                    min = first;
+                }
+            }
+            ++first;
+        }
+
+        return min;
+    }
+};
+
+struct worst_fit {
+    template<class ForwardIterator>
+    ForwardIterator operator()(ForwardIterator first, ForwardIterator last, unsigned int size) {
+        ForwardIterator max = last;
+
+        while (first != last) {
+            if (first->m_is_free && first->m_size >= size) {
+                if (max == last || first->m_size > max->m_size) {
+                    max = first;
+                }
+            }
+            ++first;
+        }
+
+        return max;
+    }
+};
+
+struct next_fit {
+    node last_node = node{false, 0, 0};
+
+    template<class ForwardIterator>
+    ForwardIterator operator()(ForwardIterator first, ForwardIterator last, unsigned int size) {
+        auto it = std::find(first, last, last_node);
+
+        auto it2 = first_fit()(it, last, size);
+        if (it2 != last) {
+            return it2;
+        } else {
+            return first_fit()(first, it, size);
+        }
+    }
+};
+
+template<class Strategy>
+void* alloumem(memory_manager& m, Strategy s, unsigned int size, int fill = 0) {
     // Cette fonction alloue un nouveau bloc de mémoire.
 
     // alloumem [(false,0,1024), (true,1024,1024), (false,2048,1024)] 512
     //          [(false,0,1024), (false,1024,512), (true,1536,512), (false,2048,1024)]
-    for (auto& n : m.m_list) {
-        if (n.m_is_free) {
-            if (n.m_size >= size) {
-                auto old_size = n.m_size;
 
-                n.m_is_free = false;
-                n.m_size = size;
+    auto it = s(std::begin(m.m_list), std::end(m.m_list), size);
 
-                m.m_list.push_back(node{true, n.m_offset + size, old_size - size});
+    if (it != std::end(m.m_list)) {
+        it->m_is_free = false;
 
-                auto ptr = reinterpret_cast<void*>(const_cast<char*>(m.m_buffer.data() + n.m_offset));
-
-                std::memset(ptr, fill, n.m_size);
-
-                return ptr;
-            }
+        if (it->m_size != size) {
+            auto old_size = it->m_size;
+            it->m_size = size;
+            m.m_list.insert(std::next(it), node{true, it->m_offset + size, old_size - size});
         }
-    }
 
-    return nullptr;
+        auto ptr = reinterpret_cast<void*>(const_cast<char*>(m.m_buffer.data() + it->m_offset));
+        std::memset(ptr, fill, size);
+
+        return ptr;
+    } else {
+        return nullptr;
+    }
 }
 
 void liberemem(memory_manager& m, void* buffer, int fill = 0) {
@@ -169,6 +232,10 @@ bool mem_est_alloue(const memory_manager& m, void* pOctet) {
 
 int main() {
     auto manager = initmem(16);
+    auto first_fit_strategy = first_fit{};
+    auto best_fit_strategy = best_fit{};
+    auto worst_fit_strategy = worst_fit{};
+    auto next_fit_strategy = next_fit{};
 
     assert(16 == mem_pgrand_libre(manager));
     assert(16 == memlibre(manager));
@@ -177,10 +244,10 @@ int main() {
     assert(0 == mem_small_free(manager, 8));
     assert(1 == mem_small_free(manager, 32));
 
-    auto ptr1 = alloumem(manager, 5);
-    auto ptr2 = alloumem(manager, 4);
-    auto ptr3 = alloumem(manager, 3);
-    auto ptr4 = alloumem(manager, 2);
+    auto ptr1 = alloumem(manager, first_fit_strategy, 5);
+    auto ptr2 = alloumem(manager, first_fit_strategy, 4);
+    auto ptr3 = alloumem(manager, first_fit_strategy, 3);
+    auto ptr4 = alloumem(manager, first_fit_strategy, 2);
 
     assert(2 == mem_pgrand_libre(manager));
     assert(2 == memlibre(manager));
