@@ -16,7 +16,7 @@ struct memory_manager {
     std::vector<node> m_list;
 };
 
-void showNodes(const memory_manager& m) {
+void show_nodes(const memory_manager& m) {
     std::cout << "[" << std::dec;
     for (auto n : m.m_list) {
         std::cout << "(" << n.m_is_free << "," << n.m_offset << "," << n.m_size << ")";
@@ -24,7 +24,7 @@ void showNodes(const memory_manager& m) {
     std::cout << "]\n";
 }
 
-void showHexa(const memory_manager& m) {
+void show_hexa(const memory_manager& m) {
     for (auto n : m.m_buffer) {
         std::cout << std::hex << "[" << static_cast<short>(n) << "]";
     }
@@ -97,9 +97,14 @@ struct next_fit {
 
         auto it2 = first_fit()(it, last, size);
         if (it2 != last) {
+            last_node = *it2;
             return it2;
         } else {
-            return first_fit()(first, it, size);
+            auto it3 = first_fit()(first, it, size);
+            if (it3 != it) {
+                last_node = it3
+            }
+            return it3;
         }
     }
 };
@@ -248,6 +253,7 @@ int main() {
     auto ptr2 = alloumem(manager, first_fit_strategy, 4);
     auto ptr3 = alloumem(manager, first_fit_strategy, 3);
     auto ptr4 = alloumem(manager, first_fit_strategy, 2);
+    show_nodes(manager);
 
     assert(2 == mem_pgrand_libre(manager));
     assert(2 == memlibre(manager));
@@ -260,15 +266,17 @@ int main() {
     liberemem(manager, ptr1);
     liberemem(manager, ptr3);
 
+    show_nodes(manager);
     assert(10 == memlibre(manager));
     assert(5 == nblocalloues(manager));
     assert(3 == nbloclibres(manager));
     assert(3 == mem_small_free(manager, 8));
     assert(3 == mem_small_free(manager, 32));
     assert(false == mem_est_alloue(manager, ptr1));
-
+    
     liberemem(manager, ptr2);
 
+    show_nodes(manager);
     assert(12 == mem_pgrand_libre(manager));
     assert(14 == memlibre(manager));
     assert(3 == nblocalloues(manager));
