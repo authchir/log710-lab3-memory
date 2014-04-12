@@ -97,19 +97,24 @@ struct worst_fit {
 
 struct next_fit {
     node last_node = node{false, 0, 0};
+    unsigned int last_offset = 0;
 
     template<class ForwardIterator>
     ForwardIterator operator()(ForwardIterator first, ForwardIterator last, unsigned int size) {
-        auto it = std::find(first, last, last_node);
+        auto it = std::find_if(first, last, [=](node n){
+            return n.m_offset > last_offset;
+        });
 
         auto it2 = first_fit()(it, last, size);
         if (it2 != last) {
             last_node = *it2;
+            last_offset = it2->m_offset;
             return it2;
         } else {
             auto it3 = first_fit()(first, it, size);
             if (it3 != it) {
                 last_node = *it3;
+                last_offset = it3->m_offset;
             }
             return it3;
         }
@@ -117,12 +122,12 @@ struct next_fit {
 };
 
 template<class Strategy>
-void* alloumem(memory_manager& m, Strategy s, unsigned int size, int fill = 0) {
+void* alloumem(memory_manager& m, Strategy& s, unsigned int size, int fill = 0) {
     // Cette fonction alloue un nouveau bloc de mémoire.
 
     // alloumem [(false,0,1024), (true,1024,1024), (false,2048,1024)] 512
     //          [(false,0,1024), (false,1024,512), (true,1536,512), (false,2048,1024)]
-
+    std::cout << "allocation" << std::endl; 
     auto it = s(std::begin(m.m_list), std::end(m.m_list), size);
 
     if (it != std::end(m.m_list)) {
@@ -148,6 +153,8 @@ void liberemem(memory_manager& m, void* buffer, int fill = 0) {
 
     // liberemem [(false,0,1024), (false,1024,512), (true,1536,512), (false,2048,1024)]
     //           [(false,0,1024), (true,1024,1024), (false,2048,1024)]
+    //
+    std::cout << "libération" << std::endl; 
     auto buffer_offset = reinterpret_cast<const char*>(buffer) - m.m_buffer.data();
 
     auto it = std::find_if(
@@ -445,6 +452,14 @@ int main() {
     ptr5 = alloumem(managerNF, next_fit_strategy, 2);
     show_nodes(managerNF);
 
+    auto ptr6 = alloumem(managerNF, next_fit_strategy, 2);
+    show_nodes(managerNF);
 
+    auto ptr7 = alloumem(managerNF, next_fit_strategy, 2);
+    show_nodes(managerNF);
 
+    liberemem(managerNF, ptr6);
+    show_nodes(managerNF);
+    auto ptr8 = alloumem(managerNF, next_fit_strategy, 2);
+    show_nodes(managerNF);
 }
