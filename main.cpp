@@ -102,7 +102,7 @@ struct next_fit {
         } else {
             auto it3 = first_fit()(first, it, size);
             if (it3 != it) {
-                last_node = it3
+                last_node = it3;
             }
             return it3;
         }
@@ -236,51 +236,113 @@ bool mem_est_alloue(const memory_manager& m, void* pOctet) {
 }
 
 int main() {
-    auto manager = initmem(16);
+    auto managerFF = initmem(16);
     auto first_fit_strategy = first_fit{};
     auto best_fit_strategy = best_fit{};
     auto worst_fit_strategy = worst_fit{};
     auto next_fit_strategy = next_fit{};
 
-    assert(16 == mem_pgrand_libre(manager));
-    assert(16 == memlibre(manager));
-    assert(1 == nblocalloues(manager));
-    assert(1 == nbloclibres(manager));
-    assert(0 == mem_small_free(manager, 8));
-    assert(1 == mem_small_free(manager, 32));
+    assert(16 == mem_pgrand_libre(managerFF));
+    assert(16 == memlibre(managerFF));
+    assert(1 == nblocalloues(managerFF));
+    assert(1 == nbloclibres(managerFF));
+    assert(0 == mem_small_free(managerFF, 8));
+    assert(1 == mem_small_free(managerFF, 32));
 
-    auto ptr1 = alloumem(manager, first_fit_strategy, 5);
-    auto ptr2 = alloumem(manager, first_fit_strategy, 4);
-    auto ptr3 = alloumem(manager, first_fit_strategy, 3);
-    auto ptr4 = alloumem(manager, first_fit_strategy, 2);
-    show_nodes(manager);
+    auto ptr1 = alloumem(managerFF, first_fit_strategy, 5);
+    auto ptr2 = alloumem(managerFF, first_fit_strategy, 4);
+    auto ptr3 = alloumem(managerFF, first_fit_strategy, 3);
+    auto ptr4 = alloumem(managerFF, first_fit_strategy, 2);
 
-    assert(2 == mem_pgrand_libre(manager));
-    assert(2 == memlibre(manager));
-    assert(5 == nblocalloues(manager));
-    assert(1 == nbloclibres(manager));
-    assert(1 == mem_small_free(manager, 8));
-    assert(1 == mem_small_free(manager, 32));
-    assert(true == mem_est_alloue(manager, ptr1));
+    std::cout << "first fit sequence" << std::endl;
+    show_nodes(managerFF);
 
-    liberemem(manager, ptr1);
-    liberemem(manager, ptr3);
+    assert(2 == mem_pgrand_libre(managerFF));
+    assert(2 == memlibre(managerFF));
+    assert(5 == nblocalloues(managerFF));
+    assert(1 == nbloclibres(managerFF));
+    assert(1 == mem_small_free(managerFF, 8));
+    assert(1 == mem_small_free(managerFF, 32));
+    assert(true == mem_est_alloue(managerFF, ptr1));
+    assert(true == mem_est_alloue(managerFF, ptr2));
+    assert(true == mem_est_alloue(managerFF, ptr3));
+    assert(true == mem_est_alloue(managerFF, ptr4));
 
-    show_nodes(manager);
-    assert(10 == memlibre(manager));
-    assert(5 == nblocalloues(manager));
-    assert(3 == nbloclibres(manager));
-    assert(3 == mem_small_free(manager, 8));
-    assert(3 == mem_small_free(manager, 32));
-    assert(false == mem_est_alloue(manager, ptr1));
+    liberemem(managerFF, ptr1);
+    liberemem(managerFF, ptr3);
+
+    show_nodes(managerFF);
+    assert(10 == memlibre(managerFF));
+    assert(5 == nblocalloues(managerFF));
+    assert(3 == nbloclibres(managerFF));
+    assert(3 == mem_small_free(managerFF, 8));
+    assert(3 == mem_small_free(managerFF, 32));
+    assert(false == mem_est_alloue(managerFF, ptr1));
+    //assert(true == mem_est_alloue(managerFF, ptr2));
+    //assert(false == mem_est_alloue(managerFF, ptr3));
+    //assert(true == mem_est_alloue(managerFF, ptr4));
     
-    liberemem(manager, ptr2);
+    liberemem(managerFF, ptr2);
 
-    show_nodes(manager);
-    assert(12 == mem_pgrand_libre(manager));
-    assert(14 == memlibre(manager));
-    assert(3 == nblocalloues(manager));
-    assert(2 == nbloclibres(manager));
-    assert(1 == mem_small_free(manager, 8));
-    assert(2 == mem_small_free(manager, 32));
+    show_nodes(managerFF);
+    assert(12 == mem_pgrand_libre(managerFF));
+    assert(14 == memlibre(managerFF));
+    assert(3 == nblocalloues(managerFF));
+    assert(2 == nbloclibres(managerFF));
+    assert(1 == mem_small_free(managerFF, 8));
+    assert(2 == mem_small_free(managerFF, 32));
+    assert(false == mem_est_alloue(managerFF, ptr1));
+    assert(false == mem_est_alloue(managerFF, ptr2));
+    assert(false == mem_est_alloue(managerFF, ptr3));
+    //assert(true == mem_est_alloue(managerFF, ptr4));
+    
+   
+    //best fit
+    std::cout << "best fit sequence" << std::endl;
+    auto managerBF = initmem(16);
+    ptr1 = alloumem(managerBF, best_fit_strategy, 5);
+    ptr2 = alloumem(managerBF, best_fit_strategy, 4);
+    ptr3 = alloumem(managerBF, best_fit_strategy, 3);
+    ptr4 = alloumem(managerBF, best_fit_strategy, 2);
+    show_nodes(managerBF);
+
+    assert(2 == mem_pgrand_libre(managerBF));
+    assert(2 == memlibre(managerBF));
+    assert(5 == nblocalloues(managerBF));
+    assert(1 == nbloclibres(managerBF));
+    assert(1 == mem_small_free(managerBF, 8));
+    assert(1 == mem_small_free(managerBF, 32));
+    assert(true == mem_est_alloue(managerBF, ptr1));
+    assert(true == mem_est_alloue(managerBF, ptr2));
+    assert(true == mem_est_alloue(managerBF, ptr3));
+    assert(true == mem_est_alloue(managerBF, ptr4));
+
+    liberemem(managerBF, ptr1);
+    liberemem(managerBF, ptr3);
+
+    show_nodes(managerBF);
+    assert(10 == memlibre(managerBF));
+    assert(5 == nblocalloues(managerBF));
+    assert(3 == nbloclibres(managerBF));
+    assert(3 == mem_small_free(managerBF, 8));
+    assert(3 == mem_small_free(managerBF, 32));
+    assert(false == mem_est_alloue(managerBF, ptr1));
+    //assert(true == mem_est_alloue(managerBF, ptr2));
+    //assert(false == mem_est_alloue(managerBF, ptr3));
+    //assert(true == mem_est_alloue(managerBF, ptr4));
+    
+    liberemem(managerBF, ptr2);
+    assert(false == mem_est_alloue(managerBF, ptr2));
+
+
+    show_nodes(managerBF);
+    assert(12 == mem_pgrand_libre(managerBF));
+    assert(14 == memlibre(managerBF));
+    assert(3 == nblocalloues(managerBF));
+    assert(2 == nbloclibres(managerBF));
+    assert(1 == mem_small_free(managerBF, 8));
+    assert(2 == mem_small_free(managerBF, 32));
+    auto ptr5 = alloumem(managerBF, best_fit_strategy, 2);
+    show_nodes(managerBF);
+
 }
