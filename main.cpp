@@ -96,7 +96,6 @@ struct worst_fit {
 };
 
 struct next_fit {
-    node last_node = node{false, 0, 0};
     unsigned int last_offset = 0;
 
     template<class ForwardIterator>
@@ -107,13 +106,11 @@ struct next_fit {
 
         auto it2 = first_fit()(it, last, size);
         if (it2 != last) {
-            last_node = *it2;
             last_offset = it2->m_offset;
             return it2;
         } else {
             auto it3 = first_fit()(first, it, size);
             if (it3 != it) {
-                last_node = *it3;
                 last_offset = it3->m_offset;
             }
             return it3;
